@@ -1,10 +1,12 @@
 import re
 from enum import Enum
 from collections import defaultdict
+from time import sleep
 from nio.common.discovery import Discoverable, DiscoverableType
 from nio.common.block.base import Block
 from nio.metadata.properties import ExpressionProperty, PropertyHolder, \
     ObjectProperty, StringProperty, SelectProperty
+from nio.modules.threading import Lock
 
 from boto.exception import JSONResponseError
 from boto.dynamodb2 import connect_to_region
@@ -39,6 +41,7 @@ class DynamoDB(Block):
         super().__init__()
         self._conn = None
         self._table_cache = {}
+        self._table_locks = defaultdict(Lock)
 
     def configure(self, context):
         super().configure(context)
@@ -66,20 +69,33 @@ class DynamoDB(Block):
             self._logger.debug("Saving {} signals to {}".format(
                 len(sigs), table_name))
             try:
-                # Get the cached table reference if we have it
-                table = self._get_table(table_name)
-                self._save_signals_to_table(table, sigs)
+                # Lock around each table - in case it is creating still
+                self._logger.debug(
+                    "Waiting for table lock on {}".format(table_name))
+                with self._table_locks[table_name]:
+                    self._logger.debug(
+                        "Table lock acquired for {}".format(table_name))
+                    table = self._get_table(table_name)
+                    self._save_signals_to_table(table, sigs)
             except Exception as e:
                 self._logger.error("Could not batch write to table {}"
                                    .format(table_name))
                 self._logger.exception(e)
 
     def _get_table(self, table_name):
-        """ Get a DynamoDB table reference.
+        """ Get a DynamoDB table reference based on a table name.
 
         If we have looked up/created this table before, use the cached
         reference. If not, check to make sure the table exists. If it does
         not exist, create it and return that reference.
+
+        Note that if this function does not find the table, it will create it
+        and this creation operation can block for some time (typically ~10s).
+        It will only return the table reference once the table is active and
+        ready to be stored to or read from.
+
+        Returns:
+            table: A boto table reference
         """
         if table_name in self._table_cache:
             return self._table_cache[table_name]
@@ -120,14 +136,27 @@ class DynamoDB(Block):
             self._logger.info(
                 "Creating table with hash key: {}, range key: {}".format(
                     hash_key, range_key))
-            return Table.create(
+            new_table = Table.create(
                 table_name,
                 schema=[HashKey(hash_key), RangeKey(range_key)],
                 connection=self._conn)
         else:
             self._logger.info(
                 "Creating table with hash key: {}".format(hash_key))
-            return Table.create(table_name, schema=[HashKey(hash_key)])
+            new_table =  Table.create(table_name, schema=[HashKey(hash_key)])
+
+        # Wait for our new table to be created
+        status = 'CREATING'
+        while status == 'CREATING':
+            sleep(0.5)
+            status = self._get_table_status(new_table)
+            self._logger.debug("Table status is {}".format(status))
+
+        return new_table
+
+    def _get_table_status(self, table):
+        """ Get a table's status from AWS """
+        return table.describe().get('Table', {}).get('TableStatus')
 
     def _save_signals_to_table(self, table, signals):
         """ Save a list of signals to a table reference """
