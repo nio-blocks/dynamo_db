@@ -131,6 +131,45 @@ class TestDynamo(NIOBlockTestCase):
         self.assertEqual(blk._count, 1)
         self.assertEqual(put_func.call_count, 1)
 
+    @patch('boto.dynamodb2.table.BatchTable.put_item')
+    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.Table.create')
+    @patch(DynamoDB.__module__ + '.connect_to_region')
+    def test_table_lock(self, connect_func, create_func, count_func, put_func):
+        """ Make sure that if a table is creating it locks """
+        # We should return the error that the table is not found.
+        # We should only see this error returned once though, subsequent calls
+        # should use the cached version of the table.
+        count_func.side_effect = [JSONResponseError(
+            400,
+            "{'message': 'Requested resource not found: Table: T notfound', "
+            "'__type': 'com.amazonaws.dynamodb.v20120810"
+            "#ResourceNotFoundException'}")]
+        blk = SaveCounterDynamoDB()
+        self.configure_block(blk, {
+            'log_level': 'DEBUG',
+            'hash_key': 'hash'
+        })
+        # Simulate a table that is creating for a while
+        blk._get_table_status = MagicMock(
+            side_effect=['CREATING', 'CREATING', 'ACTIVE'])
+
+        # Send two threads to process signals at once
+        spawn(blk.process_signals, [Signal({'hash': 'value1'})])
+        spawn(blk.process_signals, [Signal({'hash': 'value2'})])
+
+        # We shouldn't have any save calls until the table creates.
+        # That takes 1.5 seconds, so let's see what we have after some of that.
+        sleep(0.7)
+        self.assertEqual(blk._count, 0)
+
+        # Give the table time to create...
+        sleep(1)
+
+        # Ok, it's created, we should see both signals get saved
+        self.assertEqual(blk._count, 2)
+
+
     @patch(DynamoDB.__module__ + '.Table.create')
     def test_create(self, create_func):
         """ Make sure we make tables with the proper configs """
