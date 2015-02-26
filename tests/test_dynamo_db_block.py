@@ -121,7 +121,7 @@ class TestDynamo(NIOBlockTestCase):
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
             'log_level': 'DEBUG',
-            'hash_field': 'hash'
+            'hash_key': 'hash'
         })
         blk.start()
 
@@ -192,7 +192,7 @@ class TestDynamo(NIOBlockTestCase):
         # Range config - should have both configs
         blk_range = DynamoDB()
         self.configure_block(blk_range, {
-            'range_field': 'range_attr'
+            'range_key': 'range_attr'
         })
         blk_range._create_table('fake_table')
         create_func.assert_called_once_with(
@@ -203,8 +203,8 @@ class TestDynamo(NIOBlockTestCase):
         # Both config - should have both configs
         blk_both = DynamoDB()
         self.configure_block(blk_both, {
-            'hash_field': 'hash_attr',
-            'range_field': 'range_attr'
+            'hash_key': 'hash_attr',
+            'range_key': 'range_attr'
         })
         blk_both._create_table('fake_table')
         create_func.assert_called_once_with(
