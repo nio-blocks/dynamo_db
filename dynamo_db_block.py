@@ -70,8 +70,9 @@ class DynamoDB(Block):
                 table = self._get_table(table_name)
                 self._save_signals_to_table(table, sigs)
             except Exception as e:
-                self._logger.error("Could not batch write to table {} : {} {}"
-                                   .format(table_name, type(e), str(e)))
+                self._logger.error("Could not batch write to table {}"
+                                   .format(table_name))
+                self._logger.exception(e)
 
     def _get_table(self, table_name):
         """ Get a DynamoDB table reference.
@@ -96,13 +97,14 @@ class DynamoDB(Block):
                 self._logger.info("Table {} not found - creating it".format(
                     table_name))
                 table = self._create_table(table_name)
+                self._logger.debug("Table created: {}".format(table))
             else:
                 # We got some other type of exception, raise it since that
                 # wasn't expected
                 raise
         except Exception as e:
-            self._logger.error("Unable to determine table reference: {} {}"
-                               .format(type(e), str(e)))
+            self._logger.error("Unable to determine table reference")
+            self._logger.exception(e)
             return
 
         # Cache this reference to the table for later use
@@ -143,8 +145,8 @@ class DynamoDB(Block):
                     "Not saving an invalid signal - must contain hash and "
                     "range keys if specified - {}".format(signal))
         except Exception as e:
-            self._logger.error("Unable to save signal: {} {}"
-                               .format(type(e), str(e)))
+            self._logger.error("Unable to save signal")
+            self._logger.exception(e)
 
     def _is_valid_signal(self, signal):
         """ Return true if this signal is valid and can be saved """
