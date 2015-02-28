@@ -77,10 +77,9 @@ class DynamoDB(Block):
                         "Table lock acquired for {}".format(table_name))
                     table = self._get_table(table_name)
                     self._save_signals_to_table(table, sigs)
-            except Exception as e:
-                self._logger.error("Could not batch write to table {}"
-                                   .format(table_name))
-                self._logger.exception(e)
+            except:
+                self._logger.exception("Could not batch write to table {}"
+                                       .format(table_name))
 
     def _get_table(self, table_name):
         """ Get a DynamoDB table reference based on a table name.
@@ -118,9 +117,8 @@ class DynamoDB(Block):
                 # We got some other type of exception, raise it since that
                 # wasn't expected
                 raise
-        except Exception as e:
-            self._logger.error("Unable to determine table reference")
-            self._logger.exception(e)
+        except:
+            self._logger.exception("Unable to determine table reference")
             return
 
         # Cache this reference to the table for later use
@@ -143,7 +141,7 @@ class DynamoDB(Block):
         else:
             self._logger.info(
                 "Creating table with hash key: {}".format(hash_key))
-            new_table =  Table.create(table_name, schema=[HashKey(hash_key)])
+            new_table = Table.create(table_name, schema=[HashKey(hash_key)])
 
         # Wait for our new table to be created
         status = 'CREATING'
@@ -173,9 +171,8 @@ class DynamoDB(Block):
                 self._logger.warning(
                     "Not saving an invalid signal - must contain hash and "
                     "range keys if specified - {}".format(signal))
-        except Exception as e:
-            self._logger.error("Unable to save signal")
-            self._logger.exception(e)
+        except:
+            self._logger.exception("Unable to save signal")
 
     def _is_valid_signal(self, signal):
         """ Return true if this signal is valid and can be saved """
