@@ -135,6 +135,30 @@ class TestDynamo(NIOBlockTestCase):
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
     @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.connect_to_region')
+    def test_no_save_bad_table(self, connect_func, count_func, put_func):
+        """ Make sure we only save signals that can evaluate table name """
+        blk = SaveCounterDynamoDB()
+        self.configure_block(blk, {
+            'log_level': 'DEBUG',
+            'hash_key': 'hash',
+            # we will cause table errors by trying to access a character
+            # at a string index that doesn't exist
+            'table': '{{$table[10]}}'
+        })
+        blk.start()
+
+        blk.process_signals([
+            Signal({'hash': 'hash val', 'table': 'goodtablename'}),
+            # bad is bad because it doesn't have a 10th character
+            Signal({'hash': 'hash val', 'table': 'bad'})])
+
+        # One table call, one real put call (one should have errored)
+        self.assertEqual(blk._count, 1)
+        self.assertEqual(put_func.call_count, 1)
+
+    @patch('boto.dynamodb2.table.BatchTable.put_item')
+    @patch('boto.dynamodb2.table.Table.count')
     @patch(DynamoDB.__module__ + '.Table.create')
     @patch(DynamoDB.__module__ + '.connect_to_region')
     def test_table_lock(self, connect_func, create_func, count_func, put_func):

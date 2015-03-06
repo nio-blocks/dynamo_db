@@ -59,7 +59,12 @@ class DynamoDB(Block):
         # value is a list of signals that should be saved to that table name
         batch_groups = defaultdict(list)
         for sig in signals:
-            batch_groups[self.table(sig)].append(sig)
+            try:
+                table_name = self.table(sig)
+                batch_groups[table_name].append(sig)
+            except:
+                self._logger.exception("Unable to add signal to table list")
+
         self._logger.debug("Processing {} signals in {} batch groups".format(
             len(signals), len(batch_groups)))
 
