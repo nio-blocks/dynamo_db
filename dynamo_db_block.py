@@ -98,6 +98,10 @@ class DynamoDB(Block):
         It will only return the table reference once the table is active and
         ready to be stored to or read from.
 
+        As a result, it probably makes sense to call this method in a lock
+        for the specific table. Otherwise, simultaneous calls to _get_table
+        could result in multiple table creations.
+
         Returns:
             table: A boto table reference
         """
