@@ -200,6 +200,10 @@ class TestDynamo(NIOBlockTestCase):
         # Give the table time to create...
         sleep(1)
 
+        # Make sure the table create function only gets called once.  This
+        # should happen due to the presence of the lock around _get_table
+        self.assertEqual(create_func.call_count, 1)
+
         # Ok, it's created, we should see both signals get saved
         self.assertEqual(blk._count, 2)
 
