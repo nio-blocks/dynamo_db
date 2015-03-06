@@ -18,6 +18,7 @@ class SaveCounterDynamoDB(DynamoDB):
         self._count += 1
         super()._save_signals_to_table(table, signals)
 
+
 class TestDynamo(NIOBlockTestCase):
 
     @patch(DynamoDB.__module__ + '.connect_to_region')
@@ -85,7 +86,7 @@ class TestDynamo(NIOBlockTestCase):
         })
         blk.start()
 
-        blk.process_signals([Signal({'_id':''}) for i in range(5)])
+        blk.process_signals([Signal({'_id': ''}) for i in range(5)])
 
         # Only one table save call, but 5 individual puts
         self.assertEqual(blk._count, 1)
@@ -206,7 +207,6 @@ class TestDynamo(NIOBlockTestCase):
 
         # Ok, it's created, we should see both signals get saved
         self.assertEqual(blk._count, 2)
-
 
     @patch(DynamoDB.__module__ + '.Table.create')
     def test_create(self, create_func):
