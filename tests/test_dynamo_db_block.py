@@ -91,6 +91,8 @@ class TestDynamo(NIOBlockTestCase):
         self.assertEqual(blk._count, 1)
         self.assertEqual(put_func.call_count, 5)
 
+        blk.stop()
+
     @patch('boto.dynamodb2.table.BatchTable.put_item')
     @patch('boto.dynamodb2.table.Table.count')
     @patch(DynamoDB.__module__ + '.connect_to_region')
@@ -113,6 +115,8 @@ class TestDynamo(NIOBlockTestCase):
         self.assertEqual(blk._count, 2)
         self.assertEqual(put_func.call_count, 5)
 
+        blk.stop()
+
     @patch('boto.dynamodb2.table.BatchTable.put_item')
     @patch('boto.dynamodb2.table.Table.count')
     @patch(DynamoDB.__module__ + '.connect_to_region')
@@ -132,6 +136,8 @@ class TestDynamo(NIOBlockTestCase):
         # One table call, one real put call (one should have issued warning)
         self.assertEqual(blk._count, 1)
         self.assertEqual(put_func.call_count, 1)
+
+        blk.stop()
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
     @patch('boto.dynamodb2.table.Table.count')
@@ -156,6 +162,8 @@ class TestDynamo(NIOBlockTestCase):
         # One table call, one real put call (one should have errored)
         self.assertEqual(blk._count, 1)
         self.assertEqual(put_func.call_count, 1)
+
+        blk.stop()
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
     @patch('boto.dynamodb2.table.Table.count')
