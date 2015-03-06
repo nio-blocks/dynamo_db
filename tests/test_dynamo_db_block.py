@@ -37,8 +37,8 @@ class TestDynamo(NIOBlockTestCase):
             aws_secret_access_key='FAKESECRET')
 
     @patch(DynamoDB.__module__ + '.Table.create')
-    @patch('boto.dynamodb2.connect_to_region')
-    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.connect_to_region')
+    @patch(DynamoDB.__module__ + '.Table.count')
     def test_no_table(self, count_func, connect_func, create_func):
         """ Assert that tables that aren't found are created """
 
@@ -75,7 +75,7 @@ class TestDynamo(NIOBlockTestCase):
         self.assertEqual(create_func.call_count, 1)
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.Table.count')
     @patch(DynamoDB.__module__ + '.connect_to_region')
     def test_save_batch(self, connect_func, count_func, put_func):
         """ Make sure we save each table in a batch fashion """
@@ -94,7 +94,7 @@ class TestDynamo(NIOBlockTestCase):
         blk.stop()
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.Table.count')
     @patch(DynamoDB.__module__ + '.connect_to_region')
     def test_save_batch_multiple(self, connect_func, count_func, put_func):
         """ Make sure we save to different tables optimally """
@@ -118,7 +118,7 @@ class TestDynamo(NIOBlockTestCase):
         blk.stop()
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.Table.count')
     @patch(DynamoDB.__module__ + '.connect_to_region')
     def test_no_save_invalid(self, connect_func, count_func, put_func):
         """ Make sure we only save valid signals """
@@ -140,7 +140,7 @@ class TestDynamo(NIOBlockTestCase):
         blk.stop()
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.Table.count')
     @patch(DynamoDB.__module__ + '.connect_to_region')
     def test_no_save_bad_table(self, connect_func, count_func, put_func):
         """ Make sure we only save signals that can evaluate table name """
@@ -166,7 +166,7 @@ class TestDynamo(NIOBlockTestCase):
         blk.stop()
 
     @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch('boto.dynamodb2.table.Table.count')
+    @patch(DynamoDB.__module__ + '.Table.count')
     @patch(DynamoDB.__module__ + '.Table.create')
     @patch(DynamoDB.__module__ + '.connect_to_region')
     def test_table_lock(self, connect_func, create_func, count_func, put_func):
