@@ -16,7 +16,7 @@ from boto.dynamodb2.table import Table
 
 
 @Discoverable(DiscoverableType.block)
-class DynamoDB(DynamoDBBase):
+class DynamoDBInsert(DynamoDBBase):
 
     hash_key = StringProperty(title="Hash Key", default="_id")
     range_key = StringProperty(title="Range Key", default="")
