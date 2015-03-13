@@ -51,9 +51,38 @@ class DynamoDBBase(Block):
         self._logger.debug("Connection complete")
 
     def process_signals(self, signals, input_id='default'):
-        # Split the signals up into table groups for batch writing
-        # batch_groups is a dictionary where the key is a table name, and the
-        # value is a list of signals that should be go to that table name
+        batch_groups = self._get_batch_groups(signals)
+        output = self._process_batch_signals(batch_groups)
+        if output:
+            self.notify_signals(output)
+
+    def execute_signals_query(self, table, signals):
+        """ Run this block's query on the provided table.
+
+        This should be overriden in the child blocks. It will be passed
+        a valid dynamo table against which it can query.
+
+        If the block wishes, it may return a list of signals that will be
+        notified.
+
+        Params:
+            table (boto.dynamodb2.table.Table): A valid table
+            signals (list(Signal)): The signals which triggered the query
+
+        Returns:
+            signals (list): Any signals to notify
+        """
+        raise NotImplementedError()
+
+    def _get_batch_groups(self, signals):
+        """ Split the signals up into table groups for batch writing.
+
+        batch_groups is a dictionary where the key is a table name, and the
+        value is a list of signals that should be go to that table name
+
+        Returns:
+            batch_groups (dict): Dict of key=table_name and value=list(Signals)
+        """
         batch_groups = defaultdict(list)
         for sig in signals:
             try:
@@ -61,12 +90,17 @@ class DynamoDBBase(Block):
                 batch_groups[table_name].append(sig)
             except:
                 self._logger.exception("Unable to add signal to table list")
-
         self._logger.debug("Processing {} signals in {} batch groups".format(
             len(signals), len(batch_groups)))
+        return batch_groups
 
-        # Go through each table in batch groups and batch operate all of the
-        # signals to the table
+    def _process_batch_signals(self, batch_groups):
+        """ Go through each table in batch groups and batch operate all of the
+        signals to the table
+
+        Returns:
+            signals(list): All signals to notify
+        """
         output = []
         for table_name, sigs in batch_groups.items():
             self._logger.debug("Operating on {} signals to table {}".format(
@@ -86,28 +120,9 @@ class DynamoDBBase(Block):
                     else:
                         self._logger.error("Could not get table")
             except:
-                self._logger.exception("Could not batch write to table {}"
+                self._logger.exception("Could not batch operate on table {}"
                                        .format(table_name))
-            if output:
-                self.notify_signals(output)
-
-    def execute_signals_query(self, table, signals):
-        """ Run this block's query on the provided table.
-
-        This should be overriden in the child blocks. It will be passed
-        a valid dynamo table against which it can query.
-
-        If the block wishes, it may return a list of signals that will be
-        notified.
-
-        Params:
-            table (boto.dynamodb2.table.Table): A valid table
-            signals (list(Signal)): The signals which triggered the query
-
-        Returns:
-            signals (list): Any signals to notify
-        """
-        raise NotImplementedError()
+        return output
 
     def _get_table(self, table_name, create=True):
         """ Get a DynamoDB table reference based on a table name.
