@@ -52,7 +52,15 @@ class DynamoDBBase(Block):
 
     def process_signals(self, signals, input_id='default'):
         batch_groups = self._get_batch_groups(signals)
-        output = self._process_batch_signals(batch_groups)
+        output = []
+        for table_name, sigs in batch_groups.items():
+            self._logger.debug("Operating on {} signals to table {}".format(
+                len(sigs), table_name))
+            try:
+                output = self._process_table_signals(table_name, sigs)
+            except:
+                self._logger.exception("Could not batch operate on table {}"
+                                       .format(table_name))
         if output:
             self.notify_signals(output)
 
@@ -94,34 +102,27 @@ class DynamoDBBase(Block):
             len(signals), len(batch_groups)))
         return batch_groups
 
-    def _process_batch_signals(self, batch_groups):
+    def _process_table_signals(self, table_name, signals):
         """ Go through each table in batch groups and batch operate all of the
         signals to the table
 
         Returns:
-            signals(list): All signals to notify
+            signals(list): Any signals to notify
         """
         output = []
-        for table_name, sigs in batch_groups.items():
-            self._logger.debug("Operating on {} signals to table {}".format(
-                len(sigs), table_name))
-            try:
-                # Lock around each table - in case it is creating still
-                self._logger.debug(
-                    "Waiting for table lock on {}".format(table_name))
-                with self._table_locks[table_name]:
-                    self._logger.debug(
-                        "Table lock acquired for {}".format(table_name))
-                    table = self._get_table(table_name)
-                    if table:
-                        out_sigs = self.execute_signals_query(table, sigs)
-                        if out_sigs:
-                            output.extend(out_sigs)
-                    else:
-                        self._logger.error("Could not get table")
-            except:
-                self._logger.exception("Could not batch operate on table {}"
-                                       .format(table_name))
+        # Lock around each table - in case it is creating still
+        self._logger.debug(
+            "Waiting for table lock on {}".format(table_name))
+        with self._table_locks[table_name]:
+            self._logger.debug(
+                "Table lock acquired for {}".format(table_name))
+            table = self._get_table(table_name)
+            if table:
+                out_sigs = self.execute_signals_query(table, signals)
+                if out_sigs:
+                    output.extend(out_sigs)
+            else:
+                self._logger.error("Could not get table")
         return output
 
     def _get_table(self, table_name, create=True):

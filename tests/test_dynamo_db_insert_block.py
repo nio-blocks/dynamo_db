@@ -21,9 +21,12 @@ class SaveCounterDynamoDB(DynamoDBInsert):
 
 
 @patch(DynamoDBBase.__module__ + '.connect_to_region')
+@patch(DynamoDBBase.__module__ + '.Table.create')
+@patch(DynamoDBBase.__module__ + '.Table.count')
+@patch('boto.dynamodb2.table.BatchTable.put_item')
 class TestDynamoDBInsert(NIOBlockTestCase):
 
-    def test_connect(self, connect_func):
+    def test_connect(self, put_func, count_func, create_func, connect_func):
         """ Make sure we connect with the right creds """
         blk = DynamoDBInsert()
         self.configure_block(blk, {
@@ -38,9 +41,7 @@ class TestDynamoDBInsert(NIOBlockTestCase):
             aws_access_key_id='FAKEKEY',
             aws_secret_access_key='FAKESECRET')
 
-    @patch(DynamoDBBase.__module__ + '.Table.create')
-    @patch(DynamoDBBase.__module__ + '.Table.count')
-    def test_no_table(self, count_func, create_func, connect_func):
+    def test_not_table(self, put_func, count_func, create_func, connect_func):
         """ Assert that tables that aren't found are created """
 
         # Spit out the resource not found exception we get from AWS
@@ -75,9 +76,7 @@ class TestDynamoDBInsert(NIOBlockTestCase):
         self.assertEqual(count_func.call_count, 2)
         self.assertEqual(create_func.call_count, 1)
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDBInsert.__module__ + '.Table.count')
-    def test_save_batch(self, count_func, put_func, connect_func):
+    def test_save_batch(self, put_func, count_func, create_func, connect_func):
         """ Make sure we save each table in a batch fashion """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -93,9 +92,8 @@ class TestDynamoDBInsert(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDBInsert.__module__ + '.Table.count')
-    def test_save_batch_multiple(self, count_func, put_func, connect_func):
+    def test_save_batch_multiple(self, put_func, count_func, create_func,
+                                 connect_func):
         """ Make sure we save to different tables optimally """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -116,9 +114,8 @@ class TestDynamoDBInsert(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDBInsert.__module__ + '.Table.count')
-    def test_no_save_invalid(self, count_func, put_func, connect_func):
+    def test_no_save_invalid(self, put_func, count_func, create_func,
+                             connect_func):
         """ Make sure we only save valid signals """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -137,9 +134,8 @@ class TestDynamoDBInsert(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDBInsert.__module__ + '.Table.count')
-    def test_no_save_bad_table(self, count_func, put_func, connect_func):
+    def test_no_save_bad_table(self, put_func, count_func, create_func,
+                               connect_func):
         """ Make sure we only save signals that can evaluate table name """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -162,10 +158,7 @@ class TestDynamoDBInsert(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDBInsert.__module__ + '.Table.count')
-    @patch(DynamoDBInsert.__module__ + '.Table.create')
-    def test_table_lock(self, create_func, count_func, put_func, connect_func):
+    def test_table_lock(self, put_func, count_func, create_func, connect_func):
         """ Make sure that if a table is creating it locks """
         # We should return the error that the table is not found.
         # We should only see this error returned once though, subsequent calls
@@ -203,8 +196,7 @@ class TestDynamoDBInsert(NIOBlockTestCase):
         # Ok, it's created, we should see both signals get saved
         self.assertEqual(blk._count, 2)
 
-    @patch(DynamoDBInsert.__module__ + '.Table.create')
-    def test_create(self, create_func, connect_func):
+    def test_create(self, put_func, count_func, create_func, connect_func):
         """ Make sure we make tables with the proper configs """
 
         # TODO: Find a way to make this work
