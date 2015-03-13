@@ -3,28 +3,32 @@ from time import sleep
 from nio.common.signal.base import Signal
 from nio.util.support.block_test_case import NIOBlockTestCase
 from nio.modules.threading import spawn
-from ..dynamo_db_block import DynamoDB
+from ..dynamo_db_insert_block import DynamoDBInsert
+from ..dynamo_db_base_block import DynamoDBBase
 from boto.exception import JSONResponseError
 from boto.dynamodb2.fields import HashKey, RangeKey
 
 
-class SaveCounterDynamoDB(DynamoDB):
+class SaveCounterDynamoDB(DynamoDBInsert):
 
     def __init__(self):
         super().__init__()
         self._count = 0
 
-    def _save_signals_to_table(self, table, signals):
+    def execute_signals_query(self, table, signals):
         self._count += 1
-        super()._save_signals_to_table(table, signals)
+        super().execute_signals_query(table, signals)
 
 
-class TestDynamo(NIOBlockTestCase):
+@patch(DynamoDBBase.__module__ + '.connect_to_region')
+@patch(DynamoDBBase.__module__ + '.Table.create')
+@patch(DynamoDBBase.__module__ + '.Table.count')
+@patch('boto.dynamodb2.table.BatchTable.put_item')
+class TestDynamoDBInsert(NIOBlockTestCase):
 
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    def test_connect(self, connect_func):
+    def test_connect(self, put_func, count_func, create_func, connect_func):
         """ Make sure we connect with the right creds """
-        blk = DynamoDB()
+        blk = DynamoDBInsert()
         self.configure_block(blk, {
             'region': 'us_east_1',
             'creds': {
@@ -37,10 +41,7 @@ class TestDynamo(NIOBlockTestCase):
             aws_access_key_id='FAKEKEY',
             aws_secret_access_key='FAKESECRET')
 
-    @patch(DynamoDB.__module__ + '.Table.create')
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    @patch(DynamoDB.__module__ + '.Table.count')
-    def test_no_table(self, count_func, connect_func, create_func):
+    def test_not_table(self, put_func, count_func, create_func, connect_func):
         """ Assert that tables that aren't found are created """
 
         # Spit out the resource not found exception we get from AWS
@@ -49,7 +50,7 @@ class TestDynamo(NIOBlockTestCase):
             "{'message': 'Requested resource not found: Table: T notfound', "
             "'__type': 'com.amazonaws.dynamodb.v20120810"
             "#ResourceNotFoundException'}")]
-        blk = DynamoDB()
+        blk = DynamoDBInsert()
         self.configure_block(blk, {
             'log_level': 'DEBUG'
         })
@@ -75,10 +76,7 @@ class TestDynamo(NIOBlockTestCase):
         self.assertEqual(count_func.call_count, 2)
         self.assertEqual(create_func.call_count, 1)
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDB.__module__ + '.Table.count')
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    def test_save_batch(self, connect_func, count_func, put_func):
+    def test_save_batch(self, put_func, count_func, create_func, connect_func):
         """ Make sure we save each table in a batch fashion """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -94,10 +92,8 @@ class TestDynamo(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDB.__module__ + '.Table.count')
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    def test_save_batch_multiple(self, connect_func, count_func, put_func):
+    def test_save_batch_multiple(self, put_func, count_func, create_func,
+                                 connect_func):
         """ Make sure we save to different tables optimally """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -118,10 +114,8 @@ class TestDynamo(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDB.__module__ + '.Table.count')
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    def test_no_save_invalid(self, connect_func, count_func, put_func):
+    def test_no_save_invalid(self, put_func, count_func, create_func,
+                             connect_func):
         """ Make sure we only save valid signals """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -140,10 +134,8 @@ class TestDynamo(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDB.__module__ + '.Table.count')
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    def test_no_save_bad_table(self, connect_func, count_func, put_func):
+    def test_no_save_bad_table(self, put_func, count_func, create_func,
+                               connect_func):
         """ Make sure we only save signals that can evaluate table name """
         blk = SaveCounterDynamoDB()
         self.configure_block(blk, {
@@ -166,11 +158,7 @@ class TestDynamo(NIOBlockTestCase):
 
         blk.stop()
 
-    @patch('boto.dynamodb2.table.BatchTable.put_item')
-    @patch(DynamoDB.__module__ + '.Table.count')
-    @patch(DynamoDB.__module__ + '.Table.create')
-    @patch(DynamoDB.__module__ + '.connect_to_region')
-    def test_table_lock(self, connect_func, create_func, count_func, put_func):
+    def test_table_lock(self, put_func, count_func, create_func, connect_func):
         """ Make sure that if a table is creating it locks """
         # We should return the error that the table is not found.
         # We should only see this error returned once though, subsequent calls
@@ -208,8 +196,7 @@ class TestDynamo(NIOBlockTestCase):
         # Ok, it's created, we should see both signals get saved
         self.assertEqual(blk._count, 2)
 
-    @patch(DynamoDB.__module__ + '.Table.create')
-    def test_create(self, create_func):
+    def test_create(self, put_func, count_func, create_func, connect_func):
         """ Make sure we make tables with the proper configs """
 
         # TODO: Find a way to make this work
@@ -217,7 +204,7 @@ class TestDynamo(NIOBlockTestCase):
         return
 
         # Default config - should only have hash config
-        blk_default = DynamoDB()
+        blk_default = DynamoDBInsert()
         self.configure_block(blk_default, {})
         blk_default._create_table('fake_table')
         create_func.assert_called_once_with(
@@ -226,7 +213,7 @@ class TestDynamo(NIOBlockTestCase):
         create_func.reset_mock()
 
         # Range config - should have both configs
-        blk_range = DynamoDB()
+        blk_range = DynamoDBInsert()
         self.configure_block(blk_range, {
             'range_key': 'range_attr'
         })
@@ -237,7 +224,7 @@ class TestDynamo(NIOBlockTestCase):
         create_func.reset_mock()
 
         # Both config - should have both configs
-        blk_both = DynamoDB()
+        blk_both = DynamoDBInsert()
         self.configure_block(blk_both, {
             'hash_key': 'hash_attr',
             'range_key': 'range_attr'

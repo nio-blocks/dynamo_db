@@ -11,7 +11,6 @@ from nio.modules.threading import Lock
 from boto.exception import JSONResponseError
 from boto.dynamodb2 import connect_to_region
 from boto.dynamodb2.table import Table
-from boto.dynamodb2.fields import HashKey, RangeKey
 
 
 class AWSRegion(Enum):
@@ -28,14 +27,12 @@ class AWSCreds(PropertyHolder):
 
 
 @Discoverable(DiscoverableType.block)
-class DynamoDB(Block):
+class DynamoDBBase(Block):
 
     table = ExpressionProperty(title='Table', default='signals')
     region = SelectProperty(
         AWSRegion, default=AWSRegion.us_east_1, title="AWS Region")
     creds = ObjectProperty(AWSCreds, title="AWS Credentials")
-    hash_key = StringProperty(title="Hash Key", default="_id")
-    range_key = StringProperty(title="Range Key", default="")
 
     def __init__(self):
         super().__init__()
@@ -54,9 +51,47 @@ class DynamoDB(Block):
         self._logger.debug("Connection complete")
 
     def process_signals(self, signals, input_id='default'):
-        # Split the signals up into table groups for batch writing
-        # batch_groups is a dictionary where the key is a table name, and the
-        # value is a list of signals that should be saved to that table name
+        output = []
+        table_signals = self._get_table_signals(signals)
+        for table_name, sigs in table_signals.items():
+            self._logger.debug("Operating on {} signals to table {}".format(
+                len(sigs), table_name))
+            try:
+                # Add output signals from this table to list to notify.
+                output.extend(self._process_table_signals(table_name, sigs))
+            except:
+                self._logger.exception("Could not batch operate on table {}"
+                                       .format(table_name))
+        if output:
+            self.notify_signals(output)
+
+    def execute_signals_query(self, table, signals):
+        """ Run this block's query on the provided table.
+
+        This should be overriden in the child blocks. It will be passed
+        a valid dynamo table against which it can query.
+
+        If the block wishes, it may return a list of signals that will be
+        notified.
+
+        Params:
+            table (boto.dynamodb2.table.Table): A valid table
+            signals (list(Signal)): The signals which triggered the query
+
+        Returns:
+            signals (list): Any signals to notify
+        """
+        raise NotImplementedError()
+
+    def _get_table_signals(self, signals):
+        """ Split the signals up into table groups for batch processing.
+
+        batch_groups is a dictionary where the key is a table name, and the
+        value is a list of signals that should be go to that table name
+
+        Returns:
+            batch_groups (dict): Dict of key=table_name and value=list(Signals)
+        """
         batch_groups = defaultdict(list)
         for sig in signals:
             try:
@@ -64,29 +99,35 @@ class DynamoDB(Block):
                 batch_groups[table_name].append(sig)
             except:
                 self._logger.exception("Unable to add signal to table list")
-
         self._logger.debug("Processing {} signals in {} batch groups".format(
             len(signals), len(batch_groups)))
+        return batch_groups
 
-        # Go through each table in batch groups and batch write all of the
-        # signals to the table
-        for table_name, sigs in batch_groups.items():
-            self._logger.debug("Saving {} signals to {}".format(
-                len(sigs), table_name))
-            try:
-                # Lock around each table - in case it is creating still
-                self._logger.debug(
-                    "Waiting for table lock on {}".format(table_name))
-                with self._table_locks[table_name]:
-                    self._logger.debug(
-                        "Table lock acquired for {}".format(table_name))
-                    table = self._get_table(table_name)
-                    self._save_signals_to_table(table, sigs)
-            except:
-                self._logger.exception("Could not batch write to table {}"
-                                       .format(table_name))
+    def _process_table_signals(self, table_name, signals):
+        """ Go through each table in batch groups and batch operate all of the
+        signals to the table
 
-    def _get_table(self, table_name):
+        Returns:
+            signals(list): Any signals to notify or empty list
+
+        Raises:
+            Exception: When table does not exist and `create` is False
+                or when custom block implementation of execute_signals_query
+                raises Exception.
+        """
+        # Lock around each table - in case it is creating still
+        self._logger.debug(
+            "Waiting for table lock on {}".format(table_name))
+        with self._table_locks[table_name]:
+            self._logger.debug(
+                "Table lock acquired for {}".format(table_name))
+            table = self._get_table(table_name)
+            output = self.execute_signals_query(table, signals)
+        if not isinstance(output, list):
+            output = []
+        return output
+
+    def _get_table(self, table_name, create=True):
         """ Get a DynamoDB table reference based on a table name.
 
         If we have looked up/created this table before, use the cached
@@ -102,8 +143,14 @@ class DynamoDB(Block):
         for the specific table. Otherwise, simultaneous calls to _get_table
         could result in multiple table creations.
 
+        Args:
+            create (bool): If table does not exist, create it.
+
         Returns:
             table: A boto table reference
+
+        Raises:
+            Exception: When table does not exist and `create` is False.
         """
         if table_name in self._table_cache:
             return self._table_cache[table_name]
@@ -115,7 +162,7 @@ class DynamoDB(Block):
             self._logger.debug("Table {} found - contains {} items".format(
                 table_name, num_items))
         except JSONResponseError as jre:
-            if 'ResourceNotFoundException' in str(jre):
+            if create and 'ResourceNotFoundException' in str(jre):
                 # If we get a resource not found exception, the table must not
                 # exist, so let's create it
                 self._logger.info("Table {} not found - creating it".format(
@@ -128,7 +175,7 @@ class DynamoDB(Block):
                 raise
         except:
             self._logger.exception("Unable to determine table reference")
-            return
+            raise
 
         # Cache this reference to the table for later use
         self._table_cache[table_name] = table
@@ -136,61 +183,4 @@ class DynamoDB(Block):
 
     def _create_table(self, table_name):
         """ Create a table and return the table reference """
-        hash_key = self.hash_key
-        range_key = self.range_key
-
-        if range_key:
-            self._logger.info(
-                "Creating table with hash key: {}, range key: {}".format(
-                    hash_key, range_key))
-            schema=[HashKey(hash_key), RangeKey(range_key)],
-        else:
-            self._logger.info(
-                "Creating table with hash key: {}".format(hash_key))
-            schema=[HashKey(hash_key)]
-
-        new_table = Table.create(
-            table_name,
-            schema=schema,
-            connection=self._conn)
-
-        # Wait for our new table to be created
-        status = 'CREATING'
-        while status == 'CREATING':
-            sleep(0.5)
-            status = self._get_table_status(new_table)
-            self._logger.debug("Table status is {}".format(status))
-
-        return new_table
-
-    def _get_table_status(self, table):
-        """ Get a table's status from AWS """
-        return table.describe().get('Table', {}).get('TableStatus')
-
-    def _save_signals_to_table(self, table, signals):
-        """ Save a list of signals to a table reference """
-        with table.batch_write() as batch:
-            for sig in signals:
-                self._save_signal(batch, sig)
-
-    def _save_signal(self, table, signal):
-        """ Save a signal to a DynamoDB table """
-        try:
-            if self._is_valid_signal(signal):
-                table.put_item(data=signal.to_dict())
-            else:
-                self._logger.warning(
-                    "Not saving an invalid signal - must contain hash and "
-                    "range keys if specified - {}".format(signal))
-        except:
-            self._logger.exception("Unable to save signal")
-
-    def _is_valid_signal(self, signal):
-        """ Return true if this signal is valid and can be saved """
-        # A signal has a valid hash if it contains the hash field
-        hash_valid = hasattr(signal, self.hash_key)
-        # A signal has a valid range if it contains the range field or no
-        # range field was specified
-        range_valid = not self.range_key or hasattr(signal, self.range_key)
-
-        return hash_valid and range_valid
+        raise NotImplementedError()
