@@ -26,7 +26,6 @@ class AWSCreds(PropertyHolder):
                                    default="[[AMAZON_SECRET_ACCESS_KEY]]")
 
 
-@Discoverable(DiscoverableType.block)
 class DynamoDBBase(Block):
 
     table = ExpressionProperty(title='Table', default='signals')
