@@ -143,14 +143,16 @@ class DynamoDB(Block):
             self._logger.info(
                 "Creating table with hash key: {}, range key: {}".format(
                     hash_key, range_key))
-            new_table = Table.create(
-                table_name,
-                schema=[HashKey(hash_key), RangeKey(range_key)],
-                connection=self._conn)
+            schema=[HashKey(hash_key), RangeKey(range_key)],
         else:
             self._logger.info(
                 "Creating table with hash key: {}".format(hash_key))
-            new_table = Table.create(table_name, schema=[HashKey(hash_key)])
+            schema=[HashKey(hash_key)]
+
+        new_table = Table.create(
+            table_name,
+            schema=schema,
+            connection=self._conn)
 
         # Wait for our new table to be created
         status = 'CREATING'
