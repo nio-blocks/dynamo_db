@@ -88,6 +88,8 @@ class DynamoDBBase(Block):
             except:
                 self._logger.exception("Could not batch write to table {}"
                                        .format(table_name))
+            if output:
+                self.notify_signals(output)
 
     def execute_signals_query(self, table, signals):
         """ Run this block's query on the provided table.
