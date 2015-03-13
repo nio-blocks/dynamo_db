@@ -25,11 +25,12 @@ class TestDynamoDBBase(NIOBlockTestCase):
         """ Make sure a basic use of the base block passes through signals """
         blk = PassDynamoDB()
         self.configure_block(blk, {
-            'log_level': 'DEBUG'
+            'log_level': 'DEBUG',
+            'table': '{{ $_id }}'
         })
         blk.start()
 
-        blk.process_signals([Signal({'_id': ''}) for i in range(5)])
+        blk.process_signals([Signal({'_id': i}) for i in range(5)])
 
         self.assert_num_signals_notified(5)
 

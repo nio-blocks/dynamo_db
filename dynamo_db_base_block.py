@@ -51,13 +51,13 @@ class DynamoDBBase(Block):
         self._logger.debug("Connection complete")
 
     def process_signals(self, signals, input_id='default'):
-        batch_groups = self._get_batch_groups(signals)
         output = []
+        batch_groups = self._get_batch_groups(signals)
         for table_name, sigs in batch_groups.items():
             self._logger.debug("Operating on {} signals to table {}".format(
                 len(sigs), table_name))
             try:
-                output = self._process_table_signals(table_name, sigs)
+                output.extend(self._process_table_signals(table_name, sigs))
             except:
                 self._logger.exception("Could not batch operate on table {}"
                                        .format(table_name))
@@ -107,7 +107,12 @@ class DynamoDBBase(Block):
         signals to the table
 
         Returns:
-            signals(list): Any signals to notify
+            signals(list): Any signals to notify or empty list
+
+        Raises:
+            Exception: When table does not exist and `create` is False
+                or when custom block implementation of execute_signals_query
+                raises Exception.
         """
         output = []
         # Lock around each table - in case it is creating still
@@ -117,12 +122,9 @@ class DynamoDBBase(Block):
             self._logger.debug(
                 "Table lock acquired for {}".format(table_name))
             table = self._get_table(table_name)
-            if table:
-                out_sigs = self.execute_signals_query(table, signals)
-                if out_sigs:
-                    output.extend(out_sigs)
-            else:
-                self._logger.error("Could not get table")
+            out_sigs = self.execute_signals_query(table, signals)
+            if isinstance(out_sigs, list):
+                output.extend(out_sigs)
         return output
 
     def _get_table(self, table_name, create=True):
