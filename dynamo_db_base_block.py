@@ -52,11 +52,12 @@ class DynamoDBBase(Block):
 
     def process_signals(self, signals, input_id='default'):
         output = []
-        batch_groups = self._get_batch_groups(signals)
-        for table_name, sigs in batch_groups.items():
+        table_signals = self._get_table_signals(signals)
+        for table_name, sigs in table_signals.items():
             self._logger.debug("Operating on {} signals to table {}".format(
                 len(sigs), table_name))
             try:
+                # Add output signals from this table to list to notify.
                 output.extend(self._process_table_signals(table_name, sigs))
             except:
                 self._logger.exception("Could not batch operate on table {}"
@@ -82,8 +83,8 @@ class DynamoDBBase(Block):
         """
         raise NotImplementedError()
 
-    def _get_batch_groups(self, signals):
-        """ Split the signals up into table groups for batch writing.
+    def _get_table_signals(self, signals):
+        """ Split the signals up into table groups for batch processing.
 
         batch_groups is a dictionary where the key is a table name, and the
         value is a list of signals that should be go to that table name
@@ -114,7 +115,6 @@ class DynamoDBBase(Block):
                 or when custom block implementation of execute_signals_query
                 raises Exception.
         """
-        output = []
         # Lock around each table - in case it is creating still
         self._logger.debug(
             "Waiting for table lock on {}".format(table_name))
@@ -122,9 +122,9 @@ class DynamoDBBase(Block):
             self._logger.debug(
                 "Table lock acquired for {}".format(table_name))
             table = self._get_table(table_name)
-            out_sigs = self.execute_signals_query(table, signals)
-            if isinstance(out_sigs, list):
-                output.extend(out_sigs)
+            output = self.execute_signals_query(table, signals)
+        if not isinstance(output, list):
+            output = []
         return output
 
     def _get_table(self, table_name, create=True):
