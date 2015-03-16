@@ -184,3 +184,17 @@ class DynamoDBBase(Block):
     def _create_table(self, table_name):
         """ Create a table and return the table reference """
         raise NotImplementedError()
+
+    def _build_query_dict(self, signal):
+        """ Builds a query dictionary
+
+        Params:
+            signal (Signal): The signal which triggered the query
+
+        Returns:
+            query_dict (dict): Example {'limit': 1, 'key__eq': 'value'}
+
+        Raises:
+            Exception: When query evaluation fails
+        """
+        return {}

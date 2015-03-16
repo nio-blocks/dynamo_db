@@ -3,9 +3,35 @@ from nio.common.discovery import Discoverable, DiscoverableType
 from nio.common.block.base import Block
 from nio.common.signal.base import Signal
 from nio.metadata.properties import ExpressionProperty, PropertyHolder, \
-    ObjectProperty, StringProperty, SelectProperty, ListProperty
+    ObjectProperty, StringProperty, SelectProperty, ListProperty, BoolProperty
 
 from .dynamo_db_base_block import DynamoDBBase
+
+
+class Limitable():
+    """ A dynamo block mixin that allows you to limit results """
+
+    limit = ExpressionProperty(title='Limit', default='')
+
+    def _build_query_dict(self, signal=None):
+        existing_args = super()._build_query_dict(signal)
+        limit = self.limit(signal)
+        # Don't send limit if they it is an empty string (default)
+        if limit:
+            existing_args['limit'] = int(limit)
+        return existing_args
+
+
+class Reversable():
+    """ A dynamo block mixin that allows you to reverse results """
+
+    reverse = BoolProperty(title='Reverse', default=False)
+
+    def _build_query_dict(self, signal=None):
+        existing_args = super()._build_query_dict(signal)
+        if self.reverse:
+            existing_args['reverse'] = self.reverse
+        return existing_args
 
 
 class QueryFilter(PropertyHolder):
@@ -17,8 +43,9 @@ class QueryFilter(PropertyHolder):
                                default='{{ $id }}',
                                attr_default=Exception)
 
+
 @Discoverable(DiscoverableType.block)
-class DynamoDBQuery(DynamoDBBase):
+class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
 
     query_filters = ListProperty(QueryFilter,
                                  title='Query Filters',
@@ -79,8 +106,7 @@ class DynamoDBQuery(DynamoDBBase):
         Raises:
             Exception: When query filter key/value expressions fail
         """
-        output = []
-        query_dict = {}
+        query_dict = super()._build_query_dict(signal)
         for query_filter in self.query_filters:
             # evaluate query filter expression
             key = query_filter.key(signal)
