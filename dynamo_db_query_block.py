@@ -83,11 +83,7 @@ class DynamoDBQuery(DynamoDBBase):
         query_dict = {}
         for query_filter in self.query_filters:
             # evaluate query filter expression
-            try:
-                key = query_filter.key(signal)
-                value = query_filter.value(signal)
-                query_dict[key] = value
-            except:
-                self._logger.debug('Failed to evaluate query filter key/value')
-                raise
+            key = query_filter.key(signal)
+            value = query_filter.value(signal)
+            query_dict[key] = value
         return query_dict

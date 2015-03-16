@@ -5,17 +5,6 @@ from ..dynamo_db_query_block import DynamoDBQuery
 from ..dynamo_db_base_block import DynamoDBBase
 
 
-class SaveCounterDynamoDB(DynamoDBQuery):
-
-    def __init__(self):
-        super().__init__()
-        self._count = 0
-
-    def execute_signals_query(self, table, signals):
-        self._count += 1
-        super().execute_signals_query(table, signals)
-
-
 @patch(DynamoDBBase.__module__ + '.connect_to_region')
 @patch(DynamoDBBase.__module__ + '.Table.count')
 @patch(DynamoDBBase.__module__ + '.Table.query_2')
