@@ -58,11 +58,11 @@ class DynamoDBInsert(DynamoDBBase):
             self._logger.info(
                 "Creating table with hash key: {}, range key: {}".format(
                     hash_key, range_key))
-            schema=[HashKey(hash_key), RangeKey(range_key)],
+            schema = [HashKey(hash_key), RangeKey(range_key)]
         else:
             self._logger.info(
                 "Creating table with hash key: {}".format(hash_key))
-            schema=[HashKey(hash_key)]
+            schema = [HashKey(hash_key)]
 
         new_table = Table.create(
             table_name,

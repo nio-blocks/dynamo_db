@@ -199,17 +199,22 @@ class TestDynamoDBInsert(NIOBlockTestCase):
     def test_create(self, put_func, count_func, create_func, connect_func):
         """ Make sure we make tables with the proper configs """
 
-        # TODO: Find a way to make this work
-        # Unfortunately: HashKey('var') == HashKey('var') is False
-        return
-
         # Default config - should only have hash config
         blk_default = DynamoDBInsert()
         self.configure_block(blk_default, {})
         blk_default._create_table('fake_table')
-        create_func.assert_called_once_with(
-            'fake_table',
-            schema=[HashKey('_id')])
+        call_args = create_func.call_args
+        """
+        call_args[0] = ('fake_table',)
+        call_args[1] = {
+            'schema':
+                [<boto.dynamodb2.fields.HashKey object at 0x000000000>],
+            'connection':
+                <MagicMock name='connect_to_region()' id='0000000000'>
+        }
+        """
+        self.assertEqual(call_args[0][0], 'fake_table')
+        self.assertEqual(call_args[1]['schema'][0].name, '_id')
         create_func.reset_mock()
 
         # Range config - should have both configs
@@ -218,9 +223,20 @@ class TestDynamoDBInsert(NIOBlockTestCase):
             'range_key': 'range_attr'
         })
         blk_range._create_table('fake_table')
-        create_func.assert_called_once_with(
-            'fake_table',
-            schema=[HashKey('_id'), RangeKey('range_attr')])
+        call_args = create_func.call_args
+        """
+        call_args[0] = ('fake_table',)
+        call_args[1] = {
+            'schema':
+                [<boto.dynamodb2.fields.HashKey object at 0x000000000>,
+                 <boto.dynamodb2.fields.RangeKey object at 0x000000000>],
+            'connection':
+                <MagicMock name='connect_to_region()' id='0000000000'>
+        }
+        """
+        self.assertEqual(call_args[0][0], 'fake_table')
+        self.assertEqual(call_args[1]['schema'][0].name, '_id')
+        self.assertEqual(call_args[1]['schema'][1].name, 'range_attr')
         create_func.reset_mock()
 
         # Both config - should have both configs
@@ -230,7 +246,18 @@ class TestDynamoDBInsert(NIOBlockTestCase):
             'range_key': 'range_attr'
         })
         blk_both._create_table('fake_table')
-        create_func.assert_called_once_with(
-            'fake_table',
-            schema=[HashKey('hash_attr'), RangeKey('range_attr')])
+        call_args = create_func.call_args
+        """
+        call_args[0] = ('fake_table',)
+        call_args[1] = {
+            'schema':
+                [<boto.dynamodb2.fields.HashKey object at 0x000000000>,
+                 <boto.dynamodb2.fields.RangeKey object at 0x000000000>],
+            'connection':
+                <MagicMock name='connect_to_region()' id='0000000000'>
+        }
+        """
+        self.assertEqual(call_args[0][0], 'fake_table')
+        self.assertEqual(call_args[1]['schema'][0].name, 'hash_attr')
+        self.assertEqual(call_args[1]['schema'][1].name, 'range_attr')
         create_func.reset_mock()
