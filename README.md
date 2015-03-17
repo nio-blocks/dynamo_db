@@ -43,7 +43,7 @@ DynamoDBQuery
 Read signals from AWS DynamoDB.
 
 **Filter Keys** Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are eq, lt, lte, gt, gte, between and (for strings only) beginswith.
-**Limit** An integer count of the total number of itesm to return per query
+**Limit** An integer count of the total number of items to return per query
 **Reverse** Output signal list will be in reverse order
 
 A query for the hash key equal to a value must be present in the query. For example, if `name` is the hash key, then one **Filter Key** must be `name__eq`.
