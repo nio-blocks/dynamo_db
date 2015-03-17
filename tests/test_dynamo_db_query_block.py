@@ -37,6 +37,24 @@ class TestDynamoDBQuery(NIOBlockTestCase):
             'exp__eq': 'signal'
         })
 
+    def test_build_query_dict_limit(self, q_func, count_func, connect_func):
+        blk = DynamoDBQuery()
+        self.configure_block(blk, {'limit': 1})
+        query_dict = blk._build_query_dict(Signal({'id': 1}))
+        self.assertDictEqual(query_dict, {
+            'id__eq': 1,
+            'limit': 1
+        })
+
+    def test_build_query_dict_reverse(self, q_func, count_func, connect_func):
+        blk = DynamoDBQuery()
+        self.configure_block(blk, {'reverse': True})
+        query_dict = blk._build_query_dict(Signal({'id': 1}))
+        self.assertDictEqual(query_dict, {
+            'id__eq': 1,
+            'reverse': True
+        })
+
     def test_build_query_dict_fail(self, q_func, count_func, connect_func):
         blk = DynamoDBQuery()
         self.configure_block(blk, {
