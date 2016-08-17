@@ -1,8 +1,8 @@
 from enum import Enum
-from nio.common.discovery import Discoverable, DiscoverableType
-from nio.common.block.base import Block
-from nio.common.signal.base import Signal
-from nio.metadata.properties import ExpressionProperty, PropertyHolder, \
+from nio.util.discovery import discoverable
+from nio.block.base import Block
+from nio.signal.base import Signal
+from nio.properties import Property, PropertyHolder, \
     ObjectProperty, StringProperty, SelectProperty, ListProperty, BoolProperty
 
 from .dynamo_db_base_block import DynamoDBBase
@@ -11,7 +11,7 @@ from .dynamo_db_base_block import DynamoDBBase
 class Limitable():
     """ A dynamo block mixin that allows you to limit results """
 
-    limit = ExpressionProperty(title='Limit', default='')
+    limit = Property(title='Limit', default='')
 
     def _build_query_dict(self, signal=None):
         existing_args = super()._build_query_dict(signal)
@@ -29,22 +29,22 @@ class Reversable():
 
     def _build_query_dict(self, signal=None):
         existing_args = super()._build_query_dict(signal)
-        if self.reverse:
-            existing_args['reverse'] = self.reverse
+        if self.reverse():
+            existing_args['reverse'] = self.reverse()
         return existing_args
 
 
 class QueryFilter(PropertyHolder):
 
-    key = ExpressionProperty(title='Filter Key',
-                             default='id__eq',
-                             attr_default=Exception)
-    value = ExpressionProperty(title='Filter Value',
-                               default='{{ $id }}',
-                               attr_default=Exception)
+    key = Property(title='Filter Key',
+                   default='id__eq',
+                   attr_default=Exception)
+    value = Property(title='Filter Value',
+                     default='{{ $id }}',
+                     attr_default=Exception)
 
 
-@Discoverable(DiscoverableType.block)
+@discoverable
 class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
 
     query_filters = ListProperty(QueryFilter,
@@ -66,7 +66,7 @@ class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
             try:
                 output.extend(self._execute_signal_query(table, signal))
             except:
-                self._logger.exception('Failed to execute query')
+                self.logger.exception('Failed to execute query')
         return output
 
     def _execute_signal_query(self, table, signal):
@@ -87,7 +87,7 @@ class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
         """
         output = []
         query_dict = self._build_query_dict(signal)
-        self._logger.debug(
+        self.logger.debug(
             'Querying table {} with: {}'.format(table, query_dict))
         results = table.query_2(**query_dict)
         for item in results:
@@ -107,7 +107,7 @@ class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
             Exception: When query filter key/value expressions fail
         """
         query_dict = super()._build_query_dict(signal)
-        for query_filter in self.query_filters:
+        for query_filter in self.query_filters():
             # evaluate query filter expression
             key = query_filter.key(signal)
             value = query_filter.value(signal)
