@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
-from nio.common.signal.base import Signal
-from nio.util.support.block_test_case import NIOBlockTestCase
+from nio.signal.base import Signal
+from nio.testing.block_test_case import NIOBlockTestCase
 from ..dynamo_db_query_block import DynamoDBQuery
 from ..dynamo_db_base_block import DynamoDBBase
 

@@ -2,11 +2,11 @@ import re
 from enum import Enum
 from collections import defaultdict
 from time import sleep
-from nio.common.discovery import Discoverable, DiscoverableType
-from nio.common.block.base import Block
-from nio.metadata.properties import ExpressionProperty, PropertyHolder, \
+from nio.util.discovery import discoverable
+from nio.block.base import Block
+from nio.properties import Property, PropertyHolder, \
     ObjectProperty, StringProperty, SelectProperty
-from nio.modules.threading import Lock
+from threading import Lock
 
 from boto.exception import JSONResponseError
 from boto.dynamodb2 import connect_to_region
@@ -28,7 +28,7 @@ class AWSCreds(PropertyHolder):
 
 class DynamoDBBase(Block):
 
-    table = ExpressionProperty(title='Table', default='signals')
+    table = Property(title='Table', default='signals')
     region = SelectProperty(
         AWSRegion, default=AWSRegion.us_east_1, title="AWS Region")
     creds = ObjectProperty(AWSCreds, title="AWS Credentials")
@@ -41,25 +41,25 @@ class DynamoDBBase(Block):
 
     def configure(self, context):
         super().configure(context)
-        region_name = re.sub('_', '-', self.region.name)
-        self._logger.debug("Connecting to region {}...".format(region_name))
+        region_name = re.sub('_', '-', self.region().name)
+        self.logger.debug("Connecting to region {}...".format(region_name))
         self._conn = connect_to_region(
             region_name,
-            aws_access_key_id=self.creds.access_key,
-            aws_secret_access_key=self.creds.access_secret)
-        self._logger.debug("Connection complete")
+            aws_access_key_id=self.creds().access_key(),
+            aws_secret_access_key=self.creds().access_secret())
+        self.logger.debug("Connection complete")
 
     def process_signals(self, signals, input_id='default'):
         output = []
         table_signals = self._get_table_signals(signals)
         for table_name, sigs in table_signals.items():
-            self._logger.debug("Operating on {} signals to table {}".format(
+            self.logger.debug("Operating on {} signals to table {}".format(
                 len(sigs), table_name))
             try:
                 # Add output signals from this table to list to notify.
                 output.extend(self._process_table_signals(table_name, sigs))
             except:
-                self._logger.exception("Could not batch operate on table {}"
+                self.logger.exception("Could not batch operate on table {}"
                                        .format(table_name))
         if output:
             self.notify_signals(output)
@@ -97,8 +97,8 @@ class DynamoDBBase(Block):
                 table_name = self.table(sig)
                 batch_groups[table_name].append(sig)
             except:
-                self._logger.exception("Unable to add signal to table list")
-        self._logger.debug("Processing {} signals in {} batch groups".format(
+                self.logger.exception("Unable to add signal to table list")
+        self.logger.debug("Processing {} signals in {} batch groups".format(
             len(signals), len(batch_groups)))
         return batch_groups
 
@@ -115,10 +115,10 @@ class DynamoDBBase(Block):
                 raises Exception.
         """
         # Lock around each table - in case it is creating still
-        self._logger.debug(
+        self.logger.debug(
             "Waiting for table lock on {}".format(table_name))
         with self._table_locks[table_name]:
-            self._logger.debug(
+            self.logger.debug(
                 "Table lock acquired for {}".format(table_name))
             table = self._get_table(table_name)
             output = self.execute_signals_query(table, signals)
@@ -158,22 +158,22 @@ class DynamoDBBase(Block):
 
         try:
             num_items = table.count()
-            self._logger.debug("Table {} found - contains {} items".format(
+            self.logger.debug("Table {} found - contains {} items".format(
                 table_name, num_items))
         except JSONResponseError as jre:
             if create and 'ResourceNotFoundException' in str(jre):
                 # If we get a resource not found exception, the table must not
                 # exist, so let's create it
-                self._logger.info("Table {} not found - creating it".format(
+                self.logger.info("Table {} not found - creating it".format(
                     table_name))
                 table = self._create_table(table_name)
-                self._logger.debug("Table created: {}".format(table))
+                self.logger.debug("Table created: {}".format(table))
             else:
                 # We got some other type of exception, raise it since that
                 # wasn't expected
                 raise
         except:
-            self._logger.exception("Unable to determine table reference")
+            self.logger.exception("Unable to determine table reference")
             raise
 
         # Cache this reference to the table for later use

@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 from time import sleep
-from nio.common.signal.base import Signal
-from nio.util.support.block_test_case import NIOBlockTestCase
-from nio.modules.threading import spawn
+from nio.signal.base import Signal
+from nio.testing.block_test_case import NIOBlockTestCase
+from nio.util.threading.spawn import spawn
 from ..dynamo_db_insert_block import DynamoDBInsert
 from ..dynamo_db_base_block import DynamoDBBase
 from boto.exception import JSONResponseError

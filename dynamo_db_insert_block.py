@@ -2,11 +2,11 @@ import re
 from enum import Enum
 from collections import defaultdict
 from time import sleep
-from nio.common.discovery import Discoverable, DiscoverableType
-from nio.common.block.base import Block
-from nio.metadata.properties import ExpressionProperty, PropertyHolder, \
+from nio.util.discovery import discoverable
+from nio.block.base import Block
+from nio.properties import Property, PropertyHolder, \
     ObjectProperty, StringProperty, SelectProperty
-from nio.modules.threading import Lock
+from threading import Lock
 
 from .dynamo_db_base_block import DynamoDBBase
 
@@ -15,7 +15,7 @@ from boto.dynamodb2.fields import HashKey, RangeKey
 from boto.dynamodb2.table import Table
 
 
-@Discoverable(DiscoverableType.block)
+@discoverable
 class DynamoDBInsert(DynamoDBBase):
 
     hash_key = StringProperty(title="Hash Key", default="_id")
@@ -33,34 +33,34 @@ class DynamoDBInsert(DynamoDBBase):
             if self._is_valid_signal(signal):
                 table.put_item(data=signal.to_dict())
             else:
-                self._logger.warning(
+                self.logger.warning(
                     "Not saving an invalid signal - must contain hash and "
                     "range keys if specified - {}".format(signal))
         except:
-            self._logger.exception("Unable to save signal")
+            self.logger.exception("Unable to save signal")
 
     def _is_valid_signal(self, signal):
         """ Return true if this signal is valid and can be saved """
         # A signal has a valid hash if it contains the hash field
-        hash_valid = hasattr(signal, self.hash_key)
+        hash_valid = hasattr(signal, self.hash_key())
         # A signal has a valid range if it contains the range field or no
         # range field was specified
-        range_valid = not self.range_key or hasattr(signal, self.range_key)
+        range_valid = not self.range_key() or hasattr(signal, self.range_key())
 
         return hash_valid and range_valid
 
     def _create_table(self, table_name):
         """ Create a table and return the table reference """
-        hash_key = self.hash_key
-        range_key = self.range_key
+        hash_key = self.hash_key()
+        range_key = self.range_key()
 
         if range_key:
-            self._logger.info(
+            self.logger.info(
                 "Creating table with hash key: {}, range key: {}".format(
                     hash_key, range_key))
             schema = [HashKey(hash_key), RangeKey(range_key)]
         else:
-            self._logger.info(
+            self.logger.info(
                 "Creating table with hash key: {}".format(hash_key))
             schema = [HashKey(hash_key)]
 
@@ -74,7 +74,7 @@ class DynamoDBInsert(DynamoDBBase):
         while status == 'CREATING':
             sleep(0.5)
             status = self._get_table_status(new_table)
-            self._logger.debug("Table status is {}".format(status))
+            self.logger.debug("Table status is {}".format(status))
 
         return new_table
 
