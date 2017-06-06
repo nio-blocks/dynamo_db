@@ -6,10 +6,10 @@ Save signals to an AWS DynamoDB.
 Properties
 ----------
 
- - **table**: (expression) The name of the table to save to
+ - **table**: (type=expression) The name of the table to save to
  - **AWS_region**: The AWS region to save to
- - **hash_key**: (string) The attribute on the signals that will be the hash key in the table (required)
- - **range_key**: (string) The attribute on the signals that will be the range key in the table (optional). If left blank, no validation will be done and any tables created will not contain a range key.
+ - **hash_key**: (type=string) The attribute on the signals that will be the hash key in the table (required)
+ - **range_key**: (type=string) The attribute on the signals that will be the range key in the table (optional). If left blank, no validation will be done and any tables created will not contain a range key.
  - **access_key**: An AWS Access Token
  - **access_secret**: The AWS Access Token's secret
 
@@ -35,7 +35,7 @@ Output
 ------
 None
 
--------------------------------------------------------------------------------
+***
 
 DynamoDBQuery
 =============
@@ -53,11 +53,11 @@ Note that errors may occur if the type of the table attribute is different than 
 Properties
 ----------
 
- - **table**: (expression) The name of the table to save to
+ - **table**: (type=expression) The name of the table to save to
  - **AWS_region**: The AWS region to save to
  - **access_key**: An AWS Access Token
  - **access_secret**: The AWS Access Token's secret
- - **query_filters**: Key/value pairs for query (Default `key='id__eq' value='{{ $id }}'`)
+ - **query_filters**: Key/value pairs for query (Default: `key='id__eq' value='{{ $id }}'`)
 
 
 Dependencies
