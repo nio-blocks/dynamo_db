@@ -1,68 +1,18 @@
 {
-    "nio/DynamoDBQuery": {
-        "Input": {
-            "Description": "Any list of signals."
-        },
-        "Properties": {
-            "access_secret": {
-                "description": "The AWS Access Token's secret"
-            },
-            "AWS_region": {
-                "description": "The AWS region to save to"
-            },
-            "table": {
-                "type": "expression",
-                "description": "The name of the table to save to"
-            },
-            "access_key": {
-                "description": "An AWS Access Token"
-            },
-            "query_filters": {
-                "Default: `key": "'id__eq' value",
-                "description": "Key/value pairs for query"
-            }
-        },
-        "Category": "Database",
-        "Output": {
-            "Description": "One signal for each result in the ResultSet from the query."
-        },
-        "Description": "Read signals from AWS DynamoDB.\n**filter_keys**: Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are `eq`, `lt`, `lte`, `gt`, `gte`, `between` and (for strings only) `beginswith`.\n**limit**: An integer count of the total number of items to return per query\n**reverse**: Output signal list will be in reverse order\nA query for the hash\\_key equal to a value must be present in the query. For example, if `name` is the hash\\_key, then one `filter_key` must be `name__eq`.\nNote that errors may occur if the type of the table attribute is different than the type of the `filter_value`.",
-        "Commands": {},
-        "Version": "1.0.0"
-    },
-    "nio/DynamoDBInsert": {
-        "Input": {
-            "Description": "Any list of signals.\nSignals must have the attribute of the `hash_key` defined. If a `range_key` is also specified, then the signals must also contain that as an attribute.\nNote that errors may occur if the type of the `hash_key` attribute is different than the type of the `hash_key` on the DynamoDB table."
-        },
-        "Properties": {
-            "AWS_region": {
-                "description": "The AWS region to save to"
-            },
-            "hash_key": {
-                "type": "string",
-                "description": "The attribute on the signals that will be the hash key in the table (required)"
-            },
-            "access_key": {
-                "description": "An AWS Access Token"
-            },
-            "range_key": {
-                "type": "string",
-                "description": "The attribute on the signals that will be the range key in the table (optional). If left blank, no validation will be done and any tables created will not contain a range key."
-            },
-            "access_secret": {
-                "description": "The AWS Access Token's secret"
-            },
-            "table": {
-                "type": "expression",
-                "description": "The name of the table to save to"
-            }
-        },
-        "Category": "Database",
-        "Output": {
-            "Description": "None"
-        },
-        "Description": "Save signals to an AWS DynamoDB.",
-        "Commands": {},
-        "Version": "1.0.0"
-    }
+  "nio/DynamoDBInsert": {
+    "version": "0.0.1",
+    "description": "",
+    "inputs": {},
+    "outputs": {},
+    "properties": {},
+    "commands": {}
+  },
+  "nio/DynamoDBQuery": {
+    "version": "0.0.1",
+    "description": "",
+    "inputs": {},
+    "outputs": {},
+    "properties": {},
+    "commands": {}
+  }
 }
