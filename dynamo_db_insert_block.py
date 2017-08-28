@@ -1,18 +1,12 @@
-import re
-from enum import Enum
-from collections import defaultdict
 from time import sleep
-from nio.util.discovery import discoverable
-from nio.block.base import Block
-from nio.properties import Property, PropertyHolder, \
-    ObjectProperty, StringProperty, SelectProperty
-from threading import Lock
 
-from .dynamo_db_base_block import DynamoDBBase
-
-from boto.exception import JSONResponseError
 from boto.dynamodb2.fields import HashKey, RangeKey
 from boto.dynamodb2.table import Table
+
+from nio.properties import StringProperty, VersionProperty
+from nio.util.discovery import discoverable
+
+from .dynamo_db_base_block import DynamoDBBase
 
 
 @discoverable
@@ -20,6 +14,7 @@ class DynamoDBInsert(DynamoDBBase):
 
     hash_key = StringProperty(title="Hash Key", default="_id")
     range_key = StringProperty(title="Range Key", default="")
+    version = VersionProperty("1.0.0")
 
     def execute_signals_query(self, table, signals):
         """ Save a list of signals to a table reference """

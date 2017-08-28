@@ -1,14 +1,19 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 from nio.signal.base import Signal
 from nio.testing.block_test_case import NIOBlockTestCase
+from nio.util.discovery import not_discoverable
+
 from ..dynamo_db_base_block import DynamoDBBase
 
 
+@not_discoverable
 class PassDynamoDB(DynamoDBBase):
 
     def execute_signals_query(self, tables, signals):
         return signals
 
+@not_discoverable
 class ExceptionDynamoDB(DynamoDBBase):
 
     def execute_signals_query(self, tables, signals):
@@ -21,7 +26,8 @@ class ExceptionDynamoDB(DynamoDBBase):
 @patch('boto.dynamodb2.table.BatchTable.put_item')
 class TestDynamoDBBase(NIOBlockTestCase):
 
-    def test_notify_sigs(self, put_func, count_func, create_func, connect_func):
+    def test_notify_sigs(self, put_func, count_func, create_func,
+                         connect_func):
         """ Make sure a basic use of the base block passes through signals """
         blk = PassDynamoDB()
         self.configure_block(blk, {

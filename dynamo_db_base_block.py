@@ -1,12 +1,12 @@
 import re
 from enum import Enum
 from collections import defaultdict
-from time import sleep
-from nio.util.discovery import discoverable
-from nio.block.base import Block
-from nio.properties import Property, PropertyHolder, \
-    ObjectProperty, StringProperty, SelectProperty
 from threading import Lock
+
+from nio.block.base import Block
+from nio.properties import (Property, PropertyHolder, ObjectProperty,
+                            StringProperty, SelectProperty)
+from nio.util.discovery import not_discoverable
 
 from boto.exception import JSONResponseError
 from boto.dynamodb2 import connect_to_region
@@ -26,6 +26,7 @@ class AWSCreds(PropertyHolder):
                                    default="[[AMAZON_SECRET_ACCESS_KEY]]")
 
 
+@not_discoverable
 class DynamoDBBase(Block):
 
     table = Property(title='Table', default='signals')
@@ -60,7 +61,7 @@ class DynamoDBBase(Block):
                 output.extend(self._process_table_signals(table_name, sigs))
             except:
                 self.logger.exception("Could not batch operate on table {}"
-                                       .format(table_name))
+                                      .format(table_name))
         if output:
             self.notify_signals(output)
 

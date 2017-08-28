@@ -1,9 +1,7 @@
-from enum import Enum
-from nio.util.discovery import discoverable
-from nio.block.base import Block
 from nio.signal.base import Signal
-from nio.properties import Property, PropertyHolder, \
-    ObjectProperty, StringProperty, SelectProperty, ListProperty, BoolProperty
+from nio.util.discovery import discoverable
+from nio.properties import (Property, PropertyHolder, ListProperty,
+                            BoolProperty, VersionProperty)
 
 from .dynamo_db_base_block import DynamoDBBase
 
@@ -50,6 +48,7 @@ class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
     query_filters = ListProperty(QueryFilter,
                                  title='Query Filters',
                                  default=[QueryFilter()])
+    version = VersionProperty('1.0.0')
 
     def execute_signals_query(self, table, signals):
         """ Overriden from base class
