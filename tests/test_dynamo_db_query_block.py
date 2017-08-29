@@ -1,6 +1,8 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 from nio.signal.base import Signal
 from nio.testing.block_test_case import NIOBlockTestCase
+
 from ..dynamo_db_query_block import DynamoDBQuery
 from ..dynamo_db_base_block import DynamoDBBase
 
@@ -25,7 +27,7 @@ class TestDynamoDBQuery(NIOBlockTestCase):
                 {'key': 'str__eq', 'value': '1'},
                 {'key': 'dup__eq', 'value': 'first'},
                 {'key': 'dup__eq', 'value': 'duplicate'},
-                {'key': 'int__eq', 'value': '{{ 1 }}' },
+                {'key': 'int__eq', 'value': '{{ 1 }}'},
                 {'key': 'exp__eq', 'value': "{{ $id }}"}
             ]
         })
@@ -78,7 +80,7 @@ class TestDynamoDBQuery(NIOBlockTestCase):
         q_func.return_value = [{}, {}]
         blk.process_signals([Signal({'id': 1})])
         q_func.assert_called_once_with(id__eq=1,
-                                      str__beginswith='begin')
+                                       str__beginswith='begin')
         self.assert_num_signals_notified(2)
 
     def test_query_multiple(self, q_func, count_func, connect_func):

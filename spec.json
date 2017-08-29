@@ -1,18 +1,113 @@
 {
   "nio/DynamoDBInsert": {
-    "version": "0.0.1",
-    "description": "",
-    "inputs": {},
-    "outputs": {},
-    "properties": {},
+    "version": "1.0.0",
+    "description": "Save signals to an AWS DynamoDB.",
+    "properties": {
+      "creds": {
+        "title": "AWS Credentials",
+        "type": "ObjectType",
+        "description": "AWS credentials to connect with",
+        "default": {
+          "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]",
+          "access_key": "[[AMAZON_ACCESS_KEY_ID]]"
+        }
+      },
+      "hash_key": {
+        "title": "Hash Key",
+        "type": "StringType",
+        "description": "The attribute on the signals that will be the hash key in the table (required)",
+        "default": "_id"
+      },
+      "range_key": {
+        "title": "Range Key",
+        "type": "StringType",
+        "description": "The attribute on the signals that will be the range key in the table (optional). If left blank, no validation will be done and any tables created will not contain a range key.",
+        "default": ""
+      },
+      "region": {
+        "title": "AWS Region",
+        "type": "SelectType",
+        "description": "The AWS region to connect to",
+        "default": 0
+      },
+      "table": {
+        "title": "Table",
+        "type": "Type",
+        "description": "The name of the table to save to",
+        "default": "signals"
+      }
+    },
+    "inputs": {
+      "default": {
+        "description": "Any list of signals. Signals must have the attribute of the `hash_key` defined. If a `range_key` is also specified, then the signals must also contain that as an attribute. Note that errors may occur if the type of the `hash_key` attribute is different than the type of the `hash_key` on the DynamoDB table."
+      }
+    },
+    "outputs": {
+      "default": {
+        "description": "One signal for each result in the ResultSet from the query."
+      }
+    },
     "commands": {}
   },
   "nio/DynamoDBQuery": {
-    "version": "0.0.1",
-    "description": "",
-    "inputs": {},
-    "outputs": {},
-    "properties": {},
+    "version": "1.0.0",
+    "description": "Read signals from AWS DynamoDB.",
+    "properties": {
+      "creds": {
+        "title": "AWS Credentials",
+        "type": "ObjectType",
+        "description": "AWS credentials to connect with",
+        "default": {
+          "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]",
+          "access_key": "[[AMAZON_ACCESS_KEY_ID]]"
+        }
+      },
+      "limit": {
+        "title": "Limit",
+        "type": "Type",
+        "description": "An integer count of the total number of items to return per query",
+        "default": ""
+      },
+      "query_filters": {
+        "title": "Query Filters",
+        "type": "ListType",
+        "description": "Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are `eq`, `lt`, `lte`, `gt`, `gte`, `between` and (for strings only) `beginswith`.",
+        "default": [
+          {
+            "value": "{{ $id }}",
+            "key": "id__eq"
+          }
+        ]
+      },
+      "region": {
+        "title": "AWS Region",
+        "type": "SelectType",
+        "description": "The AWS region to connect to",
+        "default": 0
+      },
+      "reverse": {
+        "title": "Reverse",
+        "type": "BoolType",
+        "description": "Output signal list will be in reverse order",
+        "default": false
+      },
+      "table": {
+        "title": "Table",
+        "type": "Type",
+        "description": "The name of the table to save to",
+        "default": "signals"
+      }
+    },
+    "inputs": {
+      "default": {
+        "description": "Any list of signals."
+      }
+    },
+    "outputs": {
+      "default": {
+        "description": "One signal for each result in the ResultSet from the query."
+      }
+    },
     "commands": {}
   }
 }
