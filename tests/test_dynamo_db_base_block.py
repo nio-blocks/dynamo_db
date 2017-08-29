@@ -13,6 +13,7 @@ class PassDynamoDB(DynamoDBBase):
     def execute_signals_query(self, tables, signals):
         return signals
 
+
 @not_discoverable
 class ExceptionDynamoDB(DynamoDBBase):
 
