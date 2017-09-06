@@ -2,6 +2,9 @@
   "nio/DynamoDBInsert": {
     "version": "1.0.0",
     "description": "Save signals to an AWS DynamoDB.",
+    "categories": [
+      "Database"
+    ],
     "properties": {
       "creds": {
         "title": "AWS Credentials",
@@ -52,6 +55,9 @@
   "nio/DynamoDBQuery": {
     "version": "1.0.0",
     "description": "Read signals from AWS DynamoDB.",
+    "categories": [
+      "Database"
+    ],
     "properties": {
       "creds": {
         "title": "AWS Credentials",
