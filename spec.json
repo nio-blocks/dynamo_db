@@ -1,7 +1,7 @@
 {
   "nio/DynamoDBInsert": {
     "version": "1.0.0",
-    "description": "Save signals to an AWS DynamoDB.",
+    "description": "The DynamoDBInsert block inserts incoming signals into a [AWS DynamoDB](https://aws.amazon.com/documentation/dynamodb/).",
     "categories": [
       "Database"
     ],
@@ -9,7 +9,7 @@
       "creds": {
         "title": "AWS Credentials",
         "type": "ObjectType",
-        "description": "AWS credentials to connect with",
+        "description": "AWS credentials to connect to the DynamoDB with.",
         "default": {
           "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]",
           "access_key": "[[AMAZON_ACCESS_KEY_ID]]"
@@ -18,7 +18,7 @@
       "hash_key": {
         "title": "Hash Key",
         "type": "StringType",
-        "description": "The attribute on the signals that will be the hash key in the table (required)",
+        "description": "The attribute on the signals that will be the hash key in the table (required).",
         "default": "_id"
       },
       "range_key": {
@@ -30,13 +30,13 @@
       "region": {
         "title": "AWS Region",
         "type": "SelectType",
-        "description": "The AWS region to connect to",
+        "description": "The AWS region the DynamoDB is located in.",
         "default": 0
       },
       "table": {
         "title": "Table",
         "type": "Type",
-        "description": "The name of the table to save to",
+        "description": "The name of the DynamoDB table to insert into.",
         "default": "signals"
       }
     },
@@ -54,7 +54,7 @@
   },
   "nio/DynamoDBQuery": {
     "version": "1.0.0",
-    "description": "Read signals from AWS DynamoDB.",
+    "description": "The DynamoDBQuery block queries a AWS DynamoDB and outputs the query result as a signal.",
     "categories": [
       "Database"
     ],
@@ -62,7 +62,7 @@
       "creds": {
         "title": "AWS Credentials",
         "type": "ObjectType",
-        "description": "AWS credentials to connect with",
+        "description": "AWS credentials to connect to the DynamoDB with.",
         "default": {
           "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]",
           "access_key": "[[AMAZON_ACCESS_KEY_ID]]"
@@ -71,13 +71,13 @@
       "limit": {
         "title": "Limit",
         "type": "Type",
-        "description": "An integer count of the total number of items to return per query",
+        "description": "An integer count of the maximum number of items to return per query.",
         "default": ""
       },
       "query_filters": {
         "title": "Query Filters",
         "type": "ListType",
-        "description": "Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are `eq`, `lt`, `lte`, `gt`, `gte`, `between` and (for strings only) `beginswith`.",
+        "description": "Filtering options for limiting the query results. Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are `eq`, `lt`, `lte`, `gt`, `gte`, `between` and (for strings only) `beginswith`.",
         "default": [
           {
             "value": "{{ $id }}",
@@ -88,19 +88,19 @@
       "region": {
         "title": "AWS Region",
         "type": "SelectType",
-        "description": "The AWS region to connect to",
+        "description": "The AWS region the DynamoDB is located in.",
         "default": 0
       },
       "reverse": {
         "title": "Reverse",
         "type": "BoolType",
-        "description": "Output signal list will be in reverse order",
+        "description": "Outgoing signal list will be in reverse order of the query result.",
         "default": false
       },
       "table": {
         "title": "Table",
         "type": "Type",
-        "description": "The name of the table to save to",
+        "description": "The name of the DynamoDB table to query from.",
         "default": "signals"
       }
     },
