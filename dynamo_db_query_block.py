@@ -48,7 +48,7 @@ class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
     query_filters = ListProperty(QueryFilter,
                                  title='Query Filters',
                                  default=[QueryFilter()])
-    version = VersionProperty("1.0.0")
+    version = VersionProperty("1.0.1")
 
     def execute_signals_query(self, table, signals):
         """ Overriden from base class

@@ -53,7 +53,7 @@
     "commands": {}
   },
   "nio/DynamoDBQuery": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "The DynamoDBQuery block queries a AWS DynamoDB and outputs the query result as a signal.",
     "categories": [
       "Database"
