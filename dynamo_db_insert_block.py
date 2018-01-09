@@ -14,7 +14,7 @@ class DynamoDBInsert(DynamoDBBase):
 
     hash_key = StringProperty(title="Hash Key", default="_id")
     range_key = StringProperty(title="Range Key", default="")
-    version = VersionProperty("1.0.0")
+    version = VersionProperty("1.0.1")
 
     def execute_signals_query(self, table, signals):
         """ Save a list of signals to a table reference """

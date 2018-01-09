@@ -1,6 +1,6 @@
 {
   "nio/DynamoDBInsert": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "The DynamoDBInsert block inserts incoming signals into a [AWS DynamoDB](https://aws.amazon.com/documentation/dynamodb/).",
     "categories": [
       "Database"

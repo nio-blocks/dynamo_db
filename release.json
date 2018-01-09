@@ -2,7 +2,7 @@
   "nio/DynamoDBInsert": {
     "language": "Python",
     "url": "git://github.com/nio-blocks/dynamo_db.git",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "nio/DynamoDBQuery": {
     "language": "Python",
