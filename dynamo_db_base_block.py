@@ -3,7 +3,7 @@ from enum import Enum
 from collections import defaultdict
 from threading import Lock
 
-from nio.block.base import Block
+from nio.block.base import Base
 from nio.properties import (Property, PropertyHolder, ObjectProperty,
                             StringProperty, SelectProperty)
 from nio.util.discovery import not_discoverable
@@ -27,7 +27,7 @@ class AWSCreds(PropertyHolder):
 
 
 @not_discoverable
-class DynamoDBBase(Block):
+class DynamoDBBase(Base):
 
     table = Property(title='Table', default='signals')
     region = SelectProperty(

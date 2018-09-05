@@ -1,5 +1,5 @@
+from nio import Block
 from nio.block.mixins import EnrichSignals
-from nio.signal.base import Signal
 from nio.properties import (Property, PropertyHolder, ListProperty,
                             BoolProperty, VersionProperty)
 
@@ -42,7 +42,7 @@ class QueryFilter(PropertyHolder):
                      attr_default=Exception)
 
 
-class DynamoDBQuery(EnrichSignals, Limitable, Reversable, DynamoDBBase):
+class DynamoDBQuery(EnrichSignals, Limitable, Reversable, DynamoDBBase, Block):
 
     query_filters = ListProperty(QueryFilter,
                                  title='Query Filters',

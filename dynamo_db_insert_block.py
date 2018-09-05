@@ -3,13 +3,14 @@ from time import sleep
 from boto.dynamodb2.fields import HashKey, RangeKey
 from boto.dynamodb2.table import Table
 
+from nio import TerminatorBlock
 from nio.properties import StringProperty, VersionProperty
-from nio.block.mixins.enrich.enrich_signals import EnrichSignals
 
 from .dynamo_db_base_block import DynamoDBBase
 
 
-class DynamoDBInsert(EnrichSignals, DynamoDBBase):
+class DynamoDBInsert(DynamoDBBase, TerminatorBlock):
+
 
     hash_key = StringProperty(title="Hash Key", default="_id")
     range_key = StringProperty(title="Range Key", default="")
