@@ -1,3 +1,4 @@
+from nio import Block
 from nio.signal.base import Signal
 from nio.util.discovery import discoverable
 from nio.properties import (Property, PropertyHolder, ListProperty,
@@ -43,7 +44,7 @@ class QueryFilter(PropertyHolder):
 
 
 @discoverable
-class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
+class DynamoDBQuery(Limitable, Reversable, DynamoDBBase, Block):
 
     query_filters = ListProperty(QueryFilter,
                                  title='Query Filters',
