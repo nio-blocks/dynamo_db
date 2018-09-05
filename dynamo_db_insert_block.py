@@ -4,8 +4,8 @@ from boto.dynamodb2.fields import HashKey, RangeKey
 from boto.dynamodb2.table import Table
 
 from nio import TerminatorBlock
+from nio.util.discovery import discoverable
 from nio.properties import StringProperty, VersionProperty
-from nio.block.mixins.enrich.enrich_signals import EnrichSignals
 
 from .dynamo_db_base_block import DynamoDBBase
 

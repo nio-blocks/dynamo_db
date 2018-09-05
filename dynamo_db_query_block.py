@@ -1,6 +1,6 @@
 from nio import Block
+from nio.util.discovery import discoverable
 from nio.block.mixins import EnrichSignals
-from nio.signal.base import Signal
 from nio.properties import (Property, PropertyHolder, ListProperty,
                             BoolProperty, VersionProperty)
 
