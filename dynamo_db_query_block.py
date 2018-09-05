@@ -1,5 +1,5 @@
+from nio.block.mixins import EnrichSignals
 from nio.signal.base import Signal
-from nio.util.discovery import discoverable
 from nio.properties import (Property, PropertyHolder, ListProperty,
                             BoolProperty, VersionProperty)
 
@@ -42,8 +42,7 @@ class QueryFilter(PropertyHolder):
                      attr_default=Exception)
 
 
-@discoverable
-class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
+class DynamoDBQuery(EnrichSignals, Limitable, Reversable, DynamoDBBase):
 
     query_filters = ListProperty(QueryFilter,
                                  title='Query Filters',
@@ -90,7 +89,7 @@ class DynamoDBQuery(Limitable, Reversable, DynamoDBBase):
             'Querying table {} with: {}'.format(table, query_dict))
         results = table.query_2(**query_dict)
         for item in results:
-            output.append(Signal(dict(item)))
+            output.append(self.get_output_signal(dict(item), signal))
         return output
 
     def _build_query_dict(self, signal):
