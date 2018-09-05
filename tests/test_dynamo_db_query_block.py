@@ -93,3 +93,18 @@ class TestDynamoDBQuery(NIOBlockTestCase):
                              Signal({'id': 1})])
         # one of the three queries falied so two signals are notified
         self.assert_num_signals_notified(2)
+
+    def test_signal_enrichment(self, q_func, count_func, connect_func):
+        blk = DynamoDBQuery()
+        self.configure_block(blk, {
+            'enrich': {
+                'exclude_existing': False
+            },
+            'query_filters': [
+                {'key': 'id__eq', 'value': '{{ $id }}'},
+            ]
+        })
+        # have the query return one result
+        q_func.return_value = [{'pi': 3.14}]
+        blk.process_signals([Signal({'id': 1})])
+        self.assert_last_signal_notified(Signal({'id': 1, 'pi': 3.14}))
