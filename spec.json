@@ -11,8 +11,8 @@
         "type": "ObjectType",
         "description": "AWS credentials to connect to the DynamoDB with.",
         "default": {
-          "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]",
-          "access_key": "[[AMAZON_ACCESS_KEY_ID]]"
+          "access_key": "[[AMAZON_ACCESS_KEY_ID]]",
+          "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]"
         }
       },
       "hash_key": {
@@ -45,11 +45,7 @@
         "description": "Any list of signals. Signals must have the attribute of the `hash_key` defined. If a `range_key` is also specified, then the signals must also contain that as an attribute. Note that errors may occur if the type of the `hash_key` attribute is different than the type of the `hash_key` on the DynamoDB table."
       }
     },
-    "outputs": {
-      "default": {
-        "description": "One signal for each result in the ResultSet from the query."
-      }
-    },
+    "outputs": {},
     "commands": {}
   },
   "nio/DynamoDBQuery": {
@@ -64,8 +60,17 @@
         "type": "ObjectType",
         "description": "AWS credentials to connect to the DynamoDB with.",
         "default": {
-          "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]",
-          "access_key": "[[AMAZON_ACCESS_KEY_ID]]"
+          "access_key": "[[AMAZON_ACCESS_KEY_ID]]",
+          "access_secret": "[[AMAZON_SECRET_ACCESS_KEY]]"
+        }
+      },
+      "enrich": {
+        "title": "Signal Enrichment",
+        "type": "ObjectType",
+        "description": "Signal Enrichment\n  - *exclude_existing*: If checked (true), the attributes of the incoming signal will be excluded from the outgoing signal. If unchecked (false), the attributes of the incoming signal will be included in the outgoing signal.\n  - *enrich_field*: (hidden) The attribute on the signal to store the results from this block. If this is empty, the results will be merged onto the incoming signal. This is the default operation. Having this field allows a block to 'save' the results of an operation to a single field on an incoming signal and notify the enriched signal.",
+        "default": {
+          "enrich_field": "",
+          "exclude_existing": true
         }
       },
       "limit": {
@@ -80,8 +85,8 @@
         "description": "Filtering options for limiting the query results. Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are `eq`, `lt`, `lte`, `gt`, `gte`, `between` and (for strings only) `beginswith`.",
         "default": [
           {
-            "value": "{{ $id }}",
-            "key": "id__eq"
+            "key": "id__eq",
+            "value": "{{ $id }}"
           }
         ]
       },
