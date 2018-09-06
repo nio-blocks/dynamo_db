@@ -16,7 +16,7 @@ Inputs
 
 Outputs
 -------
-- **default**: One signal for each result in the ResultSet from the query.
+None
 
 Commands
 --------
@@ -35,6 +35,9 @@ The DynamoDBQuery block queries a AWS DynamoDB and outputs the query result as a
 Properties
 ----------
 - **creds**: AWS credentials to connect to the DynamoDB with.
+- **enrich**: Signal Enrichment
+  - *exclude_existing*: If checked (true), the attributes of the incoming signal will be excluded from the outgoing signal. If unchecked (false), the attributes of the incoming signal will be included in the outgoing signal.
+  - *enrich_field*: (hidden) The attribute on the signal to store the results from this block. If this is empty, the results will be merged onto the incoming signal. This is the default operation. Having this field allows a block to 'save' the results of an operation to a single field on an incoming signal and notify the enriched signal.
 - **limit**: An integer count of the maximum number of items to return per query.
 - **query_filters**: Filtering options for limiting the query results. Must be of the format `<fieldname>__<filter_operation>`. Options for `filter_operations` are `eq`, `lt`, `lte`, `gt`, `gte`, `between` and (for strings only) `beginswith`.
 - **region**: The AWS region the DynamoDB is located in.
